@@ -69,25 +69,20 @@ After GitHub confirms the secret is saved, securely delete the downloaded local 
 
 ## 5. First controlled run
 
-Open:
+Completed successfully on 2026-09-28 JST.
 
-`Actions -> Deploy AHC production from Google Drive -> Run workflow`
+The first end-to-end gateway run proved all of the following:
 
-Use:
+1. Drive snapshot was stable.
+2. The canonical sitemap update succeeded.
+3. The canonical AHC deploy guard succeeded.
+4. Drive still matched the captured source fingerprint immediately before deployment.
+5. Firebase deploy was limited to Hosting and project `at-home-church-okinawa`.
+6. Production runtime verification succeeded.
 
-- reason: `initial-web-deploy-gateway-verification`
-- verify_path: `/`
+The normal trigger is now the guarded `.deploy/production-request.json` path updated by ChatGPT after an explicit publication request. Manual `workflow_dispatch` remains an emergency fallback.
 
-A successful run must prove all of the following:
-
-1. Drive snapshot is stable.
-2. The canonical sitemap update succeeds.
-3. The canonical AHC deploy guard succeeds.
-4. Drive still matches the captured source fingerprint immediately before deployment.
-5. Firebase deploy is limited to Hosting and project `at-home-church-okinawa`.
-6. Production runtime verification succeeds.
-
-Only after this end-to-end run succeeds should the old PC watcher files be formally archived/retired in Drive.
+The former PC watcher files are archived in Drive under `PRODUCTION/ARCHIVE/RETIRED_PC_DEPLOY/`.
 
 ## Manual fallback
 
