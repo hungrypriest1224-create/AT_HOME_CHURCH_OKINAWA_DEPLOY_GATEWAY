@@ -19,13 +19,16 @@ The website HTML, CSS, JavaScript, images, MESSAGE content, DISCOVER content, an
 ## Normal release path
 
 1. The user explicitly requests production publication.
-2. The GitHub Actions workflow is started manually with `workflow_dispatch`.
-3. The gateway reads the canonical Drive PRODUCTION snapshot directly through the Drive API.
-4. The gateway verifies that the Drive snapshot did not change while it was being copied.
-5. The canonical sitemap updater and deploy guard from Drive are executed against the snapshot.
-6. The Drive source fingerprint is checked again immediately before deployment.
-7. Firebase Hosting only is deployed to `at-home-church-okinawa`.
-8. The production URL is verified.
+2. ChatGPT updates only `.deploy/production-request.json` with a new request ID and `deploy: true`.
+3. That single guarded path change starts the production workflow.
+4. The gateway reads the canonical Drive PRODUCTION snapshot directly through the Drive API.
+5. The gateway verifies that the Drive snapshot did not change while it was being copied.
+6. The canonical sitemap updater and deploy guard from Drive are executed against the snapshot.
+7. The Drive source fingerprint is checked again immediately before deployment.
+8. Firebase Hosting only is deployed to `at-home-church-okinawa`.
+9. The production URL is verified.
+
+Ordinary gateway code pushes, pull requests, forks, comments and schedules do not deploy production. Manual `workflow_dispatch` remains an emergency fallback.
 
 No fixed Drive-for-Desktop settling delay is used.
 
@@ -36,7 +39,7 @@ No fixed Drive-for-Desktop settling delay is used.
 - The deploy identity should have only:
   - read access to the canonical Google Drive PRODUCTION folder;
   - Firebase Hosting deployment permission for `at-home-church-okinawa`.
-- Fork, push, pull-request, issue-comment, and scheduled events do not deploy production.
+- Ordinary pushes do not deploy production. Only a push that changes `.deploy/production-request.json` on `main` may start production, and the request must pass the workflow guard. Pull requests, forks, issue comments, and schedules do not deploy production.
 - No Actions artifact or cache stores the Drive snapshot.
 
 ## Required repository secret
@@ -49,4 +52,4 @@ The value is the JSON credential for the dedicated AHC deploy service account. D
 
 The canonical Drive `deploy.cmd` remains the emergency/manual fallback. The user may confirm Google Drive for Desktop synchronization and run it explicitly from the PC.
 
-The former automatic Windows watcher is retired only after this gateway successfully completes an end-to-end production deployment.
+The former automatic Windows watcher is retired. Its scripts and diagnostics are archived in Drive under `PRODUCTION/ARCHIVE/RETIRED_PC_DEPLOY/`.
