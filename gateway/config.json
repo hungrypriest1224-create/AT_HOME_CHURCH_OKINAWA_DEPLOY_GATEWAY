@@ -1,0 +1,16 @@
+{
+  "driveRootFolderId": "1WdnTmbJeVW2WOjQRIBd2pqfKCiBFsNF7",
+  "firebaseProjectId": "at-home-church-okinawa",
+  "productionUrl": "https://at-home-church-okinawa.web.app",
+  "publicFolderName": "public",
+  "requiredRootFiles": [
+    "AGENTS.md",
+    "PROJECT_RULES.md",
+    "DEPLOYMENT.md",
+    ".firebaserc",
+    "firebase.json",
+    "deploy.cmd",
+    "deploy-guard.ps1",
+    "update-sitemap-lastmod.ps1"
+  ]
+}
