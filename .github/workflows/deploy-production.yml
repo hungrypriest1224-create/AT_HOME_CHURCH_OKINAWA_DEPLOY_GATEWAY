@@ -30,6 +30,10 @@ jobs:
       - name: Checkout gateway
         uses: actions/checkout@v4
 
+      - name: Set runner timezone to Japan
+        shell: pwsh
+        run: tzutil /s "Tokyo Standard Time"
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -128,10 +132,10 @@ jobs:
           @"
           ## AT HOME CHURCH OKINAWA production release
 
-          - Source: Google Drive `AT HOME CHURCH OKINAWA WEBSITE/PRODUCTION`
-          - Source fingerprint: `$env:AHC_SOURCE_FINGERPRINT`
-          - Firebase project: `at-home-church-okinawa`
-          - Deployment scope: `hosting` only
+          - Source: Google Drive AT HOME CHURCH OKINAWA WEBSITE/PRODUCTION
+          - Source fingerprint: $env:AHC_SOURCE_FINGERPRINT
+          - Firebase project: at-home-church-okinawa
+          - Deployment scope: hosting only
           - Production: https://at-home-church-okinawa.web.app
           - Runtime verification: passed
           - Trigger: explicit `workflow_dispatch`
