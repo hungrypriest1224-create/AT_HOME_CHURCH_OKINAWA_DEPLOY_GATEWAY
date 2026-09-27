@@ -1,6 +1,10 @@
 name: Deploy AHC production from Google Drive
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - ".deploy/production-request.json"
   workflow_dispatch:
     inputs:
       reason:
@@ -29,6 +33,184 @@ jobs:
     steps:
       - name: Checkout gateway
         uses: actions/checkout@v4
+
+      - name: Validate production deploy request
+        id: request
+        shell: pwsh
+        run: |
+          if ("${{ github.event_name }}" -eq "workflow_dispatch") {
+            $reason = "${{ inputs.reason }}"
+            if ([string]::IsNullOrWhiteSpace($reason)) { $reason = "manual-workflow-dispatch" }
+            $verifyPath = "${{ inputs.verify_path }}"
+            if ([string]::IsNullOrWhiteSpace($verifyPath)) { $verifyPath = "/" }
+
+            "reason=$reason" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            "verify_path=$verifyPath" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            "request_id=workflow-dispatch-${{ github.run_id }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            exit 0
+          }
+
+          $requestPath = Join-Path $env:GITHUB_WORKSPACE ".deploy/production-request.json"
+          if (-not (Test-Path -LiteralPath $requestPath)) {
+            throw "Production deploy request file is missing."
+          }
+
+          try {
+            $request = Get-Content -LiteralPath $requestPath -Raw -Encoding UTF8 | ConvertFrom-Json
+          } catch {
+            throw "Production deploy request JSON is invalid."
+          }
+
+          if ([int]$request.schema -ne 1) { throw "Unsupported deploy request schema." }
+          if ($request.deploy -ne $true) { throw "Deploy request is not armed (deploy=true required)." }
+          if ([string]$request.firebase_project -ne "at-home-church-okinawa") {
+            throw "Deploy request targets an unexpected Firebase project."
+          }
+
+          $requestId = [string]$request.request_id
+          if ([string]::IsNullOrWhiteSpace($requestId) -or $requestId -notmatch '^[A-Za-z0-9._:-]+
+      - name: Set runner timezone to Japan
+        shell: pwsh
+        run: tzutil /s "Tokyo Standard Time"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Prepare AHC deploy credential
+        shell: pwsh
+        env:
+          AHC_DEPLOY_SERVICE_ACCOUNT_JSON: ${{ secrets.AHC_DEPLOY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:AHC_DEPLOY_SERVICE_ACCOUNT_JSON)) {
+            throw "Repository secret AHC_DEPLOY_SERVICE_ACCOUNT_JSON is not configured."
+          }
+
+          try {
+            $credential = $env:AHC_DEPLOY_SERVICE_ACCOUNT_JSON | ConvertFrom-Json
+          } catch {
+            throw "AHC_DEPLOY_SERVICE_ACCOUNT_JSON is not valid JSON."
+          }
+
+          if ([string]::IsNullOrWhiteSpace([string]$credential.client_email) -or
+              [string]::IsNullOrWhiteSpace([string]$credential.private_key)) {
+            throw "AHC deploy credential is missing client_email or private_key."
+          }
+
+          $credentialPath = Join-Path $env:RUNNER_TEMP "ahc-deploy-service-account.json"
+          [System.IO.File]::WriteAllText(
+            $credentialPath,
+            $env:AHC_DEPLOY_SERVICE_ACCOUNT_JSON,
+            (New-Object System.Text.UTF8Encoding($false))
+          )
+
+          "GOOGLE_APPLICATION_CREDENTIALS=$credentialPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Read stable Drive PRODUCTION snapshot
+        id: snapshot
+        shell: pwsh
+        run: |
+          $source = Join-Path $env:RUNNER_TEMP "ahc-production"
+          $manifest = Join-Path $env:RUNNER_TEMP "ahc-drive-snapshot.json"
+
+          "AHC_SOURCE=$source" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "AHC_MANIFEST=$manifest" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+          node gateway/drive-snapshot.mjs download --out "$source" --manifest "$manifest"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          $snapshot = Get-Content -LiteralPath $manifest -Raw -Encoding UTF8 | ConvertFrom-Json
+          "AHC_SOURCE_FINGERPRINT=$($snapshot.fingerprint)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "fingerprint=$($snapshot.fingerprint)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Refresh sitemap from Drive modification times
+        shell: pwsh
+        run: |
+          $script = Join-Path $env:AHC_SOURCE "update-sitemap-lastmod.ps1"
+          $publicRoot = Join-Path $env:AHC_SOURCE "public"
+
+          & $script -PublicRoot $publicRoot
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Run canonical AHC deploy guard
+        shell: pwsh
+        run: |
+          $guard = Join-Path $env:AHC_SOURCE "deploy-guard.ps1"
+
+          & $guard -ProjectId "at-home-church-okinawa"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Confirm Drive source has not changed
+        shell: pwsh
+        run: |
+          node gateway/drive-snapshot.mjs verify --manifest "$env:AHC_MANIFEST"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Deploy Firebase Hosting only
+        shell: pwsh
+        run: |
+          Push-Location $env:AHC_SOURCE
+          try {
+            & npx.cmd --yes firebase-tools@15.30.2 deploy --only hosting --project "at-home-church-okinawa" --non-interactive
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          } finally {
+            Pop-Location
+          }
+
+      - name: Verify production runtime
+        shell: pwsh
+        run: |
+          node gateway/verify-production.mjs "${{ steps.request.outputs.verify_path }}"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Write release summary
+        if: success()
+        shell: pwsh
+        run: |
+          @"
+          ## AT HOME CHURCH OKINAWA production release
+
+          - Source: Google Drive AT HOME CHURCH OKINAWA WEBSITE/PRODUCTION
+          - Source fingerprint: $env:AHC_SOURCE_FINGERPRINT
+          - Firebase project: at-home-church-okinawa
+          - Deployment scope: hosting only
+          - Production: https://at-home-church-okinawa.web.app
+          - Runtime verification: passed
+          - Request ID: ${{ steps.request.outputs.request_id }}
+          - Reason: ${{ steps.request.outputs.reason }}
+          - Trigger: ${{ github.event_name }}
+          "@ | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
+
+      - name: Cleanup ephemeral credential and snapshot
+        if: always()
+        shell: pwsh
+        run: |
+          if ($env:GOOGLE_APPLICATION_CREDENTIALS -and (Test-Path -LiteralPath $env:GOOGLE_APPLICATION_CREDENTIALS)) {
+            Remove-Item -LiteralPath $env:GOOGLE_APPLICATION_CREDENTIALS -Force -ErrorAction SilentlyContinue
+          }
+          if ($env:AHC_SOURCE -and (Test-Path -LiteralPath $env:AHC_SOURCE)) {
+            Remove-Item -LiteralPath $env:AHC_SOURCE -Recurse -Force -ErrorAction SilentlyContinue
+          }
+          if ($env:AHC_MANIFEST -and (Test-Path -LiteralPath $env:AHC_MANIFEST)) {
+            Remove-Item -LiteralPath $env:AHC_MANIFEST -Force -ErrorAction SilentlyContinue
+          }
+) {
+            throw "Deploy request_id is missing or invalid."
+          }
+
+          $verifyPath = [string]$request.verify_path
+          if ([string]::IsNullOrWhiteSpace($verifyPath)) { $verifyPath = "/" }
+          if (-not $verifyPath.StartsWith("/") -or $verifyPath.Contains("://") -or $verifyPath.Contains("\")) {
+            throw "Deploy verify_path is invalid."
+          }
+
+          $reason = [string]$request.reason
+          if ([string]::IsNullOrWhiteSpace($reason)) { $reason = "chatgpt-deploy-request" }
+
+          "reason=$reason" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          "verify_path=$verifyPath" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          "request_id=$requestId" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
       - name: Set runner timezone to Japan
         shell: pwsh
