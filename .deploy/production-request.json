@@ -1,8 +1,8 @@
 {
   "schema": 1,
-  "deploy": false,
-  "request_id": "bootstrap",
-  "reason": "initial gateway setup",
+  "deploy": true,
+  "request_id": "initial-web-deploy-gateway-verification-20260928-0051-jst",
+  "reason": "initial-web-deploy-gateway-verification",
   "verify_path": "/",
   "firebase_project": "at-home-church-okinawa"
 }
