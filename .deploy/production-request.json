@@ -1,8 +1,8 @@
 {
   "schema": 1,
   "deploy": true,
-  "request_id": "initial-web-deploy-gateway-verification-20260928-0051-jst",
-  "reason": "initial-web-deploy-gateway-verification",
-  "verify_path": "/",
+  "request_id": "morning-word-luke-11-28-20260928-v1",
+  "reason": "publish-2026-09-28-morning-word-luke-11-28",
+  "verify_path": "/message/morning/2026-09-28-luke-11-28/",
   "firebase_project": "at-home-church-okinawa"
 }
