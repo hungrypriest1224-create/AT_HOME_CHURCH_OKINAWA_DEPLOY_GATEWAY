@@ -12,13 +12,14 @@ Create a dedicated service account such as:
 
 `ahc-deploy-gateway`
 
-Grant only:
+Grant these two predefined roles:
 
-`Firebase Hosting Admin (roles/firebasehosting.admin)`
+- `Firebase Hosting Admin (roles/firebasehosting.admin)`
+- `API Keys Viewer (roles/serviceusage.apiKeysViewer)`
 
 Do not grant Owner or Editor.
 
-The Hosting Admin role is intended to provide read/write access to Firebase Hosting resources.
+Firebase Hosting Admin provides read/write access to Hosting resources. Firebase's current IAM documentation also requires API Keys Viewer when deploying through the Firebase CLI.
 
 ## 2. Give it read-only access to the canonical Drive folder
 
