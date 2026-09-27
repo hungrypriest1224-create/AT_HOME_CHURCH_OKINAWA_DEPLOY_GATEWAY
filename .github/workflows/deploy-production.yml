@@ -1,0 +1,152 @@
+name: Deploy AHC production from Google Drive
+
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Reason for this production release"
+        required: false
+        type: string
+      verify_path:
+        description: "Production path to verify after deploy"
+        required: true
+        default: "/"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: atc-production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Drive snapshot -> Firebase Hosting
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout gateway
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Prepare AHC deploy credential
+        shell: pwsh
+        env:
+          AHC_DEPLOY_SERVICE_ACCOUNT_JSON: ${{ secrets.AHC_DEPLOY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:AHC_DEPLOY_SERVICE_ACCOUNT_JSON)) {
+            throw "Repository secret AHC_DEPLOY_SERVICE_ACCOUNT_JSON is not configured."
+          }
+
+          try {
+            $credential = $env:AHC_DEPLOY_SERVICE_ACCOUNT_JSON | ConvertFrom-Json
+          } catch {
+            throw "AHC_DEPLOY_SERVICE_ACCOUNT_JSON is not valid JSON."
+          }
+
+          if ([string]::IsNullOrWhiteSpace([string]$credential.client_email) -or
+              [string]::IsNullOrWhiteSpace([string]$credential.private_key)) {
+            throw "AHC deploy credential is missing client_email or private_key."
+          }
+
+          $credentialPath = Join-Path $env:RUNNER_TEMP "ahc-deploy-service-account.json"
+          [System.IO.File]::WriteAllText(
+            $credentialPath,
+            $env:AHC_DEPLOY_SERVICE_ACCOUNT_JSON,
+            (New-Object System.Text.UTF8Encoding($false))
+          )
+
+          "GOOGLE_APPLICATION_CREDENTIALS=$credentialPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Read stable Drive PRODUCTION snapshot
+        id: snapshot
+        shell: pwsh
+        run: |
+          $source = Join-Path $env:RUNNER_TEMP "ahc-production"
+          $manifest = Join-Path $env:RUNNER_TEMP "ahc-drive-snapshot.json"
+
+          "AHC_SOURCE=$source" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "AHC_MANIFEST=$manifest" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+          node gateway/drive-snapshot.mjs download --out "$source" --manifest "$manifest"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          $snapshot = Get-Content -LiteralPath $manifest -Raw -Encoding UTF8 | ConvertFrom-Json
+          "AHC_SOURCE_FINGERPRINT=$($snapshot.fingerprint)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "fingerprint=$($snapshot.fingerprint)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Refresh sitemap from Drive modification times
+        shell: pwsh
+        run: |
+          $script = Join-Path $env:AHC_SOURCE "update-sitemap-lastmod.ps1"
+          $publicRoot = Join-Path $env:AHC_SOURCE "public"
+
+          & $script -PublicRoot $publicRoot
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Run canonical AHC deploy guard
+        shell: pwsh
+        run: |
+          $guard = Join-Path $env:AHC_SOURCE "deploy-guard.ps1"
+
+          & $guard -ProjectId "at-home-church-okinawa"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Confirm Drive source has not changed
+        shell: pwsh
+        run: |
+          node gateway/drive-snapshot.mjs verify --manifest "$env:AHC_MANIFEST"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Deploy Firebase Hosting only
+        shell: pwsh
+        run: |
+          Push-Location $env:AHC_SOURCE
+          try {
+            & npx.cmd --yes firebase-tools@15.30.2 deploy --only hosting --project "at-home-church-okinawa" --non-interactive
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          } finally {
+            Pop-Location
+          }
+
+      - name: Verify production runtime
+        shell: pwsh
+        run: |
+          node gateway/verify-production.mjs "${{ inputs.verify_path }}"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Write release summary
+        if: success()
+        shell: pwsh
+        run: |
+          @"
+          ## AT HOME CHURCH OKINAWA production release
+
+          - Source: Google Drive `AT HOME CHURCH OKINAWA WEBSITE/PRODUCTION`
+          - Source fingerprint: `$env:AHC_SOURCE_FINGERPRINT`
+          - Firebase project: `at-home-church-okinawa`
+          - Deployment scope: `hosting` only
+          - Production: https://at-home-church-okinawa.web.app
+          - Runtime verification: passed
+          - Trigger: explicit `workflow_dispatch`
+          "@ | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
+
+      - name: Cleanup ephemeral credential and snapshot
+        if: always()
+        shell: pwsh
+        run: |
+          if ($env:GOOGLE_APPLICATION_CREDENTIALS -and (Test-Path -LiteralPath $env:GOOGLE_APPLICATION_CREDENTIALS)) {
+            Remove-Item -LiteralPath $env:GOOGLE_APPLICATION_CREDENTIALS -Force -ErrorAction SilentlyContinue
+          }
+          if ($env:AHC_SOURCE -and (Test-Path -LiteralPath $env:AHC_SOURCE)) {
+            Remove-Item -LiteralPath $env:AHC_SOURCE -Recurse -Force -ErrorAction SilentlyContinue
+          }
+          if ($env:AHC_MANIFEST -and (Test-Path -LiteralPath $env:AHC_MANIFEST)) {
+            Remove-Item -LiteralPath $env:AHC_MANIFEST -Force -ErrorAction SilentlyContinue
+          }
