@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "deploy": false,
+  "request_id": "bootstrap",
+  "reason": "initial gateway setup",
+  "verify_path": "/",
+  "firebase_project": "at-home-church-okinawa"
+}
