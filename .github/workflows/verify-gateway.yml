@@ -46,25 +46,37 @@ jobs:
           if (!config.driveRootFolderId) throw new Error("driveRootFolderId is missing");
           NODE
 
-      - name: Ensure production workflow remains manual-only
+      - name: Verify production trigger guardrails
         shell: bash
         run: |
           node - <<'NODE'
           const fs = require("fs");
           const text = fs.readFileSync(".github/workflows/deploy-production.yml", "utf8");
+
           if (!/^\s{2}workflow_dispatch:/m.test(text)) {
-            throw new Error("Production workflow must use workflow_dispatch");
+            throw new Error("Production workflow must retain workflow_dispatch fallback");
           }
-          for (const forbidden of ["push:", "pull_request:", "pull_request_target:", "schedule:", "issues:", "issue_comment:"]) {
-            const re = new RegExp("^\\s{2}" + forbidden.replace(/[.*+?^$()|[\\]\\]/g, "\\$&"), "m");
+          if (!/^\s{2}push:/m.test(text)) {
+            throw new Error("Production workflow must include the guarded deploy-request push trigger");
+          }
+          if (!text.includes('".deploy/production-request.json"')) {
+            throw new Error("Production push trigger must be restricted to .deploy/production-request.json");
+          }
+
+          for (const forbidden of ["pull_request:", "pull_request_target:", "schedule:", "issues:", "issue_comment:"]) {
+            const re = new RegExp("^\\s{2}" + forbidden, "m");
             if (re.test(text)) {
               throw new Error(`Forbidden production trigger found: ${forbidden}`);
             }
           }
+
           if (!text.includes("cancel-in-progress: false")) {
             throw new Error("Production concurrency must not cancel an in-progress deploy");
           }
           if (!text.includes('--only hosting --project "at-home-church-okinawa"')) {
             throw new Error("Hosting-only pinned Firebase deploy command is missing");
+          }
+          if (!text.includes('deploy -ne $true')) {
+            throw new Error("Production request must require deploy=true");
           }
           NODE
