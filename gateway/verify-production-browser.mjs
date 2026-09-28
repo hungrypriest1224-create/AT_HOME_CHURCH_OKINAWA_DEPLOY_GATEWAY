@@ -129,6 +129,9 @@ async function runScenario(browser, options, body) {
 
   const page = await context.newPage();
   page.on("pageerror", (error) => scenario.pageErrors.push(error.message));
+  page.on("console", (message) => {
+    if (message.type() === "error") scenario.consoleErrors.push(message.text());
+  });
   page.on("requestfailed", (request) => {
     if (sameOrigin(request.url())) {
       scenario.sameOriginFailures.push(
