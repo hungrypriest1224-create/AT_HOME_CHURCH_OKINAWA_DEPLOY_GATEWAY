@@ -165,6 +165,47 @@ async function buildInventory(token) {
     seenPaths.add(row.path);
   }
 
+  async function addRequiredSourcePath(relPath) {
+    const parts = String(relPath || "").split("/").filter(Boolean);
+    if (parts.length < 1) fail("requiredSourcePaths contains an empty path.");
+
+    let children = rootChildren;
+    let parentLabel = "<root>";
+
+    for (let index = 0; index < parts.length; index += 1) {
+      const part = parts[index];
+      validateDriveName(part, parentLabel);
+      const matches = children.filter((item) => item.name === part);
+      if (matches.length !== 1) {
+        fail(`Required source path "${relPath}" must resolve uniquely at "${part}"; found ${matches.length}.`);
+      }
+
+      const item = matches[0];
+      const isLast = index === parts.length - 1;
+      if (!isLast) {
+        if (item.mimeType !== GOOGLE_DRIVE_FOLDER_MIME) {
+          fail(`Required source path "${relPath}" expected folder at "${parts.slice(0, index + 1).join("/")}".`);
+        }
+        children = await listChildren(token, item.id);
+        parentLabel = parts.slice(0, index + 1).join("/");
+        continue;
+      }
+
+      if (item.mimeType === GOOGLE_DRIVE_FOLDER_MIME || item.mimeType.startsWith(GOOGLE_NATIVE_PREFIX)) {
+        fail(`Required source path "${relPath}" is not a raw downloadable file.`);
+      }
+
+      const normalizedPath = parts.join("/");
+      if (seenPaths.has(normalizedPath)) fail(`Duplicate Drive path: ${normalizedPath}`);
+      seenPaths.add(normalizedPath);
+      entries.push(inventoryEntry(item, normalizedPath, "file"));
+    }
+  }
+
+  for (const requiredPath of config.requiredSourcePaths || []) {
+    await addRequiredSourcePath(requiredPath);
+  }
+
   const publicMatches = rootChildren.filter(
     (item) => item.name === config.publicFolderName && item.mimeType === GOOGLE_DRIVE_FOLDER_MIME
   );
