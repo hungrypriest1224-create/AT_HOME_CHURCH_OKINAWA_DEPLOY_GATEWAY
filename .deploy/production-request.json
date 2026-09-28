@@ -1,8 +1,8 @@
 {
   "schema": 1,
   "deploy": true,
-  "request_id": "hong-kong-testimony-20260928-v1",
-  "reason": "publish-hong-kong-team-testimony-readable-page",
-  "verify_path": "/testimony/hong-kong-team-2026-08-02/",
+  "request_id": "athchurch-domain-migration-20260929-v1",
+  "reason": "publish-athchurch-org-canonical-domain-migration",
+  "verify_path": "/",
   "firebase_project": "at-home-church-okinawa"
 }
