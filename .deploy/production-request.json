@@ -1,8 +1,8 @@
 {
   "schema": 1,
   "deploy": true,
-  "request_id": "ahc-morning-word-bilingual-archive-20260929-v2",
-  "reason": "publish-bilingual-line-morning-word-archive-after-snapshot-fix",
-  "verify_path": "/message/morning/2025-06-23-jer-29-11/",
+  "request_id": "ahc-morning-word-20260929-psalm1186-v1",
+  "reason": "publish-2026-09-29-morning-word-psalm-118-6",
+  "verify_path": "/message/morning/2026-09-29-psalm-118-6/",
   "firebase_project": "at-home-church-okinawa"
 }
