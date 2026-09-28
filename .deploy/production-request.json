@@ -1,8 +1,8 @@
 {
   "schema": 1,
   "deploy": true,
-  "request_id": "browser-gated-release-20260928-v1",
-  "reason": "verify-playwright-chromium-production-gate",
+  "request_id": "browser-gated-release-20260928-v2",
+  "reason": "retry-playwright-chromium-production-gate-after-browser-path-fix",
   "verify_path": "/",
   "firebase_project": "at-home-church-okinawa"
 }
