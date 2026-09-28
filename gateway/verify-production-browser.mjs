@@ -160,6 +160,9 @@ async function runScenario(browser, options, body) {
     if (scenario.pageErrors.length) {
       fail(`${name}: page errors: ${scenario.pageErrors.join(" | ")}`);
     }
+    if (scenario.consoleErrors.length) {
+      fail(`${name}: console errors: ${scenario.consoleErrors.join(" | ")}`);
+    }
     if (scenario.sameOriginFailures.length) {
       fail(`${name}: same-origin request failures: ${scenario.sameOriginFailures.join(" | ")}`);
     }
