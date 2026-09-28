@@ -26,7 +26,9 @@ The website HTML, CSS, JavaScript, images, MESSAGE content, DISCOVER content, an
 6. The canonical sitemap updater and deploy guard from Drive are executed against the snapshot.
 7. The Drive source fingerprint is checked again immediately before deployment.
 8. Firebase Hosting only is deployed to `at-home-church-okinawa`.
-9. The production URL is verified.
+9. The production URL must pass HTTP/runtime verification.
+10. Headless Chromium (Playwright) opens the live production site and verifies desktop/mobile Globe and Light Home behavior, including NEW/read state, menu behavior, MESSAGE navigation, English navigation, browser page/console errors, and same-origin request failures.
+11. Screenshots and a structured JSON report are stored in a short-retention `ahc-browser-verification-<run_id>` Actions artifact.
 
 Ordinary gateway code pushes, pull requests, forks, comments and schedules do not deploy production. Manual `workflow_dispatch` remains an emergency fallback.
 
