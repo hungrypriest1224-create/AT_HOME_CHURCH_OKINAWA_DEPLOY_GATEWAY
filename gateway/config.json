@@ -1,7 +1,7 @@
 {
   "driveRootFolderId": "1WdnTmbJeVW2WOjQRIBd2pqfKCiBFsNF7",
   "firebaseProjectId": "at-home-church-okinawa",
-  "productionUrl": "https://at-home-church-okinawa.web.app",
+  "productionUrl": "https://athchurch.org",
   "publicFolderName": "public",
   "requiredRootFiles": [
     "AGENTS.md",

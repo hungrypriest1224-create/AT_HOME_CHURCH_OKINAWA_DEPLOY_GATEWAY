@@ -42,7 +42,7 @@ jobs:
           const config = JSON.parse(fs.readFileSync("gateway/config.json", "utf8"));
           const expected = {
             firebaseProjectId: "at-home-church-okinawa",
-            productionUrl: "https://at-home-church-okinawa.web.app",
+            productionUrl: "https://athchurch.org",
             publicFolderName: "public"
           };
           for (const [key, value] of Object.entries(expected)) {

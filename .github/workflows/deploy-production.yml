@@ -221,7 +221,7 @@ jobs:
           - Source fingerprint: ${{ needs.deploy.outputs.source_fingerprint }}
           - Firebase project: at-home-church-okinawa
           - Deployment scope: hosting only
-          - Production: https://at-home-church-okinawa.web.app
+          - Production: https://athchurch.org
           - Runtime verification: passed
           - Chromium browser verification: passed (desktop/mobile Globe + Light Home, NEW/read state, menu, MESSAGE transition, English route)
           - Browser evidence artifact: ahc-browser-verification-${{ github.run_id }}
