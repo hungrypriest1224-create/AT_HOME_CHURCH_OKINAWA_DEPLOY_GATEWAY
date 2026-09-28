@@ -51,6 +51,12 @@ jobs:
             }
           }
           if (!config.driveRootFolderId) throw new Error("driveRootFolderId is missing");
+          if (!Array.isArray(config.requiredRootFiles) || !config.requiredRootFiles.includes("build-morning-word-archive.mjs")) {
+            throw new Error("Morning Word generator must be a required Drive root file");
+          }
+          if (!Array.isArray(config.requiredSourcePaths) || !config.requiredSourcePaths.includes("content/message/morning-word-source/morning-word-public.json")) {
+            throw new Error("Morning Word publication data must be included in the Drive snapshot");
+          }
           NODE
 
       - name: Verify production trigger guardrails
