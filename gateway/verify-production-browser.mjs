@@ -258,6 +258,9 @@ try {
           { timeout: 15000 }
         );
         assert(await message.evaluate((el) => el.classList.contains("has-latest")), "Globe MESSAGE carries recent-content state");
+        const badge = page.locator('.semantic-float[data-entry="message"] .semantic-latest-badge');
+        await badge.waitFor({ state: "attached", timeout: 15000 });
+        assert(String(await badge.textContent()).includes("NEW"), "desktop Globe renders the MESSAGE NEW badge");
       }
     }
   );
