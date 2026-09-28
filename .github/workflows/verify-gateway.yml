@@ -3,7 +3,13 @@ name: Verify AHC deploy gateway code
 on:
   push:
     branches: [main]
+    paths:
+      - ".github/workflows/**"
+      - "gateway/**"
   pull_request:
+    paths:
+      - ".github/workflows/**"
+      - "gateway/**"
   workflow_dispatch:
 
 permissions:
@@ -52,41 +58,48 @@ jobs:
         run: |
           node - <<'NODE'
           const fs = require("fs");
-          const text = fs.readFileSync(".github/workflows/deploy-production.yml", "utf8");
+          const deployText = fs.readFileSync(".github/workflows/deploy-production.yml", "utf8");
+          const verifyText = fs.readFileSync(".github/workflows/verify-gateway.yml", "utf8");
 
-          if (!/^\s{2}workflow_dispatch:/m.test(text)) {
+          if (!/^\s{2}workflow_dispatch:/m.test(deployText)) {
             throw new Error("Production workflow must retain workflow_dispatch fallback");
           }
-          if (!/^\s{2}push:/m.test(text)) {
+          if (!/^\s{2}push:/m.test(deployText)) {
             throw new Error("Production workflow must include the guarded deploy-request push trigger");
           }
-          if (!text.includes('".deploy/production-request.json"')) {
+          if (!deployText.includes('".deploy/production-request.json"')) {
             throw new Error("Production push trigger must be restricted to .deploy/production-request.json");
           }
 
           for (const forbidden of ["pull_request:", "pull_request_target:", "schedule:", "issues:", "issue_comment:"]) {
             const re = new RegExp("^\\s{2}" + forbidden, "m");
-            if (re.test(text)) {
+            if (re.test(deployText)) {
               throw new Error(`Forbidden production trigger found: ${forbidden}`);
             }
           }
 
-          if (!text.includes("cancel-in-progress: false")) {
+          if (!deployText.includes("cancel-in-progress: false")) {
             throw new Error("Production concurrency must not cancel an in-progress deploy");
           }
-          if (!text.includes('--only hosting --project "at-home-church-okinawa"')) {
+          if (!deployText.includes('--only hosting --project "at-home-church-okinawa"')) {
             throw new Error("Hosting-only pinned Firebase deploy command is missing");
           }
-          if (!text.includes("playwright@1.55.0")) {
+          if (!deployText.includes("playwright@1.55.0")) {
             throw new Error("Pinned Playwright browser verifier dependency is missing");
           }
-          if (!text.includes("node gateway/verify-production-browser.mjs")) {
+          if (!deployText.includes("node gateway/verify-production-browser.mjs")) {
             throw new Error("Production Chromium browser gate is missing");
           }
-          if (!text.includes("actions/upload-artifact@v4")) {
+          if (!deployText.includes("actions/upload-artifact@v4")) {
             throw new Error("Browser verification evidence upload is missing");
           }
-          if (!text.includes('deploy -ne $true')) {
+          if (!deployText.includes('deploy -ne $true')) {
             throw new Error("Production request must require deploy=true");
+          }
+          if (!/^\s{2}browser_verify:/m.test(deployText) || !deployText.includes("needs: deploy")) {
+            throw new Error("Browser verification must remain a separate job that depends on deploy");
+          }
+          if (!verifyText.includes('paths:') || verifyText.includes('".deploy/production-request.json"')) {
+            throw new Error("Gateway code verification must not run for production request-file updates");
           }
           NODE
