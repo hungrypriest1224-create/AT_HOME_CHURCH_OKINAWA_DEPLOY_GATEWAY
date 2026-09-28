@@ -1,8 +1,8 @@
 {
   "schema": 1,
   "deploy": true,
-  "request_id": "home-new-performance-audit-20260928-v1",
-  "reason": "home-new-persistence-performance-and-english-navigation-fixes",
+  "request_id": "browser-gated-release-20260928-v1",
+  "reason": "verify-playwright-chromium-production-gate",
   "verify_path": "/",
   "firebase_project": "at-home-church-okinawa"
 }
