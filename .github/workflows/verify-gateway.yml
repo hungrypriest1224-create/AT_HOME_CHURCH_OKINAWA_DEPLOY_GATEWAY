@@ -26,6 +26,7 @@ jobs:
         run: |
           node --check gateway/drive-snapshot.mjs
           node --check gateway/verify-production.mjs
+          node --check gateway/verify-production-browser.mjs
 
       - name: Validate fixed deployment configuration
         shell: bash
