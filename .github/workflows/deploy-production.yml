@@ -28,7 +28,7 @@ jobs:
   deploy:
     name: Drive snapshot -> Firebase Hosting
     runs-on: windows-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
 
     steps:
       - name: Checkout gateway
@@ -85,6 +85,18 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
+
+      - name: Prepare Chromium browser verification
+        shell: pwsh
+        run: |
+          $browserRoot = Join-Path $env:RUNNER_TEMP "ahc-playwright-browsers"
+          $artifactRoot = Join-Path $env:RUNNER_TEMP "ahc-browser-verification"
+          "PLAYWRIGHT_BROWSERS_PATH=$browserRoot" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "AHC_BROWSER_ARTIFACT_DIR=$artifactRoot" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          npm.cmd install --no-save --no-audit --no-fund --prefix gateway playwright@1.55.0
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & (Join-Path $env:GITHUB_WORKSPACE "gateway\node_modules\.bin\playwright.cmd") install chromium
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Prepare AHC deploy credential
         shell: pwsh
@@ -152,6 +164,21 @@ jobs:
           node gateway/verify-production.mjs "${{ steps.request.outputs.verify_path }}"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+      - name: Verify production in Chromium
+        shell: pwsh
+        run: |
+          node gateway/verify-production-browser.mjs "${{ steps.request.outputs.verify_path }}"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Upload browser verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ahc-browser-verification-${{ github.run_id }}
+          path: ${{ env.AHC_BROWSER_ARTIFACT_DIR }}
+          if-no-files-found: ignore
+          retention-days: 14
+
       - name: Write release summary
         if: success()
         shell: pwsh
@@ -165,6 +192,8 @@ jobs:
           - Deployment scope: hosting only
           - Production: https://at-home-church-okinawa.web.app
           - Runtime verification: passed
+          - Chromium browser verification: passed (desktop/mobile Globe + Light Home, NEW/read state, menu, MESSAGE transition, English route)
+          - Browser evidence artifact: ahc-browser-verification-${{ github.run_id }}
           - Request ID: ${{ steps.request.outputs.request_id }}
           - Reason: ${{ steps.request.outputs.reason }}
           - Trigger: ${{ github.event_name }}
