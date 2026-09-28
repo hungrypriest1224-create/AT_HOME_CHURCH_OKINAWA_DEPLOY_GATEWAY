@@ -91,6 +91,8 @@ jobs:
         run: |
           $browserRoot = Join-Path $env:RUNNER_TEMP "ahc-playwright-browsers"
           $artifactRoot = Join-Path $env:RUNNER_TEMP "ahc-browser-verification"
+          $env:PLAYWRIGHT_BROWSERS_PATH = $browserRoot
+          $env:AHC_BROWSER_ARTIFACT_DIR = $artifactRoot
           "PLAYWRIGHT_BROWSERS_PATH=$browserRoot" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "AHC_BROWSER_ARTIFACT_DIR=$artifactRoot" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           npm.cmd install --no-save --no-audit --no-fund --prefix gateway playwright@1.55.0
