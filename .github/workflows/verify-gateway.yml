@@ -99,7 +99,8 @@ jobs:
           if (!/^\s{2}browser_verify:/m.test(deployText) || !deployText.includes("needs: deploy")) {
             throw new Error("Browser verification must remain a separate job that depends on deploy");
           }
-          if (!verifyText.includes('paths:') || verifyText.includes('".deploy/production-request.json"')) {
+          const verifyTriggerText = verifyText.split(/^permissions:/m)[0];
+          if (!verifyTriggerText.includes('paths:') || verifyTriggerText.includes('".deploy/production-request.json"')) {
             throw new Error("Gateway code verification must not run for production request-file updates");
           }
           NODE
