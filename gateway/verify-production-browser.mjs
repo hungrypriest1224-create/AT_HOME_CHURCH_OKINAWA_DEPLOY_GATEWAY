@@ -347,6 +347,9 @@ try {
         null,
         { timeout: 15000 }
       );
+      if (messageState.latestMorningIsRecent) {
+        assert(await morning.locator(".light-new").isVisible(), "mobile Light NEW label is visible");
+      }
       const expectedHref = await morning.getAttribute("href");
       assert(!!expectedHref && expectedHref.includes("/message/"), "mobile Light morning card has a MESSAGE destination");
       await Promise.all([
