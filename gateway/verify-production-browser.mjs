@@ -96,6 +96,7 @@ async function runScenario(browser, options, body) {
     mode,
     startedAt: new Date().toISOString(),
     pageErrors: [],
+    consoleErrors: [],
     sameOriginFailures: [],
     assertions: []
   };
