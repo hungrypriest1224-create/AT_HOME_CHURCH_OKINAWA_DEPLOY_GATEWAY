@@ -1,8 +1,8 @@
 {
   "schema": 1,
   "deploy": true,
-  "request_id": "ahc-en-morning-20260928-29-v1",
-  "reason": "publish-english-morning-word-pairs",
-  "verify_path": "/en/message/morning/2026-09-29-psalm-118-6/",
+  "request_id": "ahc-morning-20260930-psalm149-v1",
+  "reason": "publish-morning-word-2026-09-30",
+  "verify_path": "/message/morning/2026-09-30-psalm-149-1/",
   "firebase_project": "at-home-church-okinawa"
 }
