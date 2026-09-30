@@ -1,8 +1,8 @@
 {
   "schema": 1,
   "deploy": true,
-  "request_id": "ahc-morning-20261001-0720-isaiah-42-9-v1",
-  "reason": "publish-morning-word-2026-10-01",
-  "verify_path": "/message/morning/2026-10-01-isaiah-42-9/",
+  "request_id": "ahc-biblestudy-20261001-0805-v1",
+  "reason": "publish-bible-study-schedule-2026-10-01",
+  "verify_path": "/contact/",
   "firebase_project": "at-home-church-okinawa"
 }
