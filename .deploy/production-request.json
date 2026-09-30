@@ -1,8 +1,8 @@
 {
   "schema": 1,
   "deploy": true,
-  "request_id": "ahc-message-visuals-20261001-0048-v1",
-  "reason": "publish-message-visual-backgrounds",
-  "verify_path": "/message/morning/2026-09-30-psalm-149-1/",
+  "request_id": "ahc-morning-20261001-0720-isaiah-42-9-v1",
+  "reason": "publish-morning-word-2026-10-01",
+  "verify_path": "/message/morning/2026-10-01-isaiah-42-9/",
   "firebase_project": "at-home-church-okinawa"
 }
