@@ -1,8 +1,8 @@
 {
   "schema": 1,
   "deploy": true,
-  "request_id": "ahc-worship-20260927-20260930-v1",
-  "reason": "publish-2026-09-27-worship-message",
-  "verify_path": "/message/worship/2026-09-27-take-heed-lest-you-fall/",
+  "request_id": "ahc-message-visuals-20261001-0048-v1",
+  "reason": "publish-message-visual-backgrounds",
+  "verify_path": "/message/morning/2026-09-30-psalm-149-1/",
   "firebase_project": "at-home-church-okinawa"
 }
