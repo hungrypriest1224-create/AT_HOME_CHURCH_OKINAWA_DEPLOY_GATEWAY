@@ -1,8 +1,8 @@
 {
   "schema": 1,
   "deploy": true,
-  "request_id": "ahc-biblestudy-20261001-0805-v1",
-  "reason": "publish-bible-study-schedule-2026-10-01",
-  "verify_path": "/contact/",
+  "request_id": "ahc-readability-20261001-v1",
+  "reason": "publish-shared-readability-and-bible-dark-surface-2026-10-01",
+  "verify_path": "/bible-today/",
   "firebase_project": "at-home-church-okinawa"
 }
