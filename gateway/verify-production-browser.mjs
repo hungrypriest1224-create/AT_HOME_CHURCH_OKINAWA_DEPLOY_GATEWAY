@@ -413,7 +413,73 @@ try {
       await page.waitForTimeout(500);
       const bibleTodayLinks = page.locator('a[href$="/en/bible-today/"]');
       assert((await bibleTodayLinks.count()) > 0, "English navigation exposes /en/bible-today/");
+
+      await page.waitForSelector('[data-three3-portal] a', { state: "attached", timeout: 15000 });
+      const englishJerusalemPortal = page.locator('[data-three3-portal] a');
+      const englishPortalHref = await englishJerusalemPortal.getAttribute("href");
+      assert(
+        !!englishPortalHref && new URL(englishPortalHref, config.productionUrl).pathname === "/en/bible-today/",
+        "English Jerusalem 3/3 portal targets /en/bible-today/"
+      );
+      const englishPortalText = (await englishJerusalemPortal.innerText()).trim();
+      assert(
+        englishPortalText.includes("Bible to Today") && !englishPortalText.includes("聖書から、今日へ。"),
+        "English Jerusalem 3/3 portal uses English visible copy"
+      );
+      assert(
+        (await englishJerusalemPortal.getAttribute("aria-label")) === "Open Bible to Today from Jerusalem",
+        "English Jerusalem 3/3 portal uses an English accessible label"
+      );
+      assert(
+        !(await englishJerusalemPortal.evaluate((node) => !!node.closest('[aria-hidden="true"]'))),
+        "English Jerusalem 3/3 portal is not inside an aria-hidden subtree"
+      );
+
       await verifyRequestedPath(page, assert);
+
+      await Promise.all([
+        page.waitForURL((url) => url.origin === productionOrigin && url.pathname === "/en/bible-today/", { timeout: 30000 }),
+        englishJerusalemPortal.evaluate((node) => node.click())
+      ]);
+      assert(new URL(page.url()).pathname === "/en/bible-today/", "English Jerusalem 3/3 portal navigates to English BIBLE TODAY");
+    }
+  );
+
+  await runScenario(
+    browser,
+    {
+      name: "japanese-jerusalem-portal-parity",
+      viewport: { width: 1280, height: 900 },
+      mode: "globe",
+      readIds: [],
+      locale: "ja-JP"
+    },
+    async ({ page, assert }) => {
+      await gotoHome(page, "globe");
+      await page.waitForSelector('[data-three3-portal] a', { state: "attached", timeout: 15000 });
+      const japaneseJerusalemPortal = page.locator('[data-three3-portal] a');
+      const japanesePortalHref = await japaneseJerusalemPortal.getAttribute("href");
+      assert(
+        !!japanesePortalHref && new URL(japanesePortalHref, config.productionUrl).pathname === "/bible-today/",
+        "Japanese Jerusalem 3/3 portal keeps /bible-today/"
+      );
+      assert(
+        (await japaneseJerusalemPortal.innerText()).includes("聖書から、今日へ。"),
+        "Japanese Jerusalem 3/3 portal keeps Japanese visible copy"
+      );
+      assert(
+        (await japaneseJerusalemPortal.getAttribute("aria-label")) === "エルサレムから「聖書から、今日へ。」を開く",
+        "Japanese Jerusalem 3/3 portal keeps the Japanese accessible label"
+      );
+      assert(
+        !(await japaneseJerusalemPortal.evaluate((node) => !!node.closest('[aria-hidden="true"]'))),
+        "Japanese Jerusalem 3/3 portal is not inside an aria-hidden subtree"
+      );
+      await Promise.all([
+        page.waitForURL((url) => url.origin === productionOrigin && url.pathname === "/bible-today/", { timeout: 30000 }),
+        japaneseJerusalemPortal.evaluate((node) => node.click())
+      ]);
+      assert(new URL(page.url()).pathname === "/bible-today/", "Japanese Jerusalem 3/3 portal navigates to Japanese BIBLE TODAY");
     }
   );
 
