@@ -1,8 +1,8 @@
 {
   "schema": 1,
   "deploy": true,
-  "request_id": "ahc-parity-light-audit-20261001-v1",
-  "reason": "publish-language-light-testimony-parity-fixes-2026-10-01",
-  "verify_path": "/testimony/yoga-teacher-to-christian-airi/",
+  "request_id": "ahc-en-globe-home-20261001-v1",
+  "reason": "publish-english-home-globe-light-parity-2026-10-01",
+  "verify_path": "/en/",
   "firebase_project": "at-home-church-okinawa"
 }
