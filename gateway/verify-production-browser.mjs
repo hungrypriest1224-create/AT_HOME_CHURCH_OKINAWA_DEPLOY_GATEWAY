@@ -215,6 +215,41 @@ async function verifyRequestedPath(page, assert) {
   assert(!!response && response.ok(), `requested path returns success: ${requestedPath}`);
   const text = await page.locator("body").innerText();
   assert(text.trim().length > 0, `requested path has rendered body content: ${requestedPath}`);
+
+  const pathname = new URL(page.url()).pathname;
+  if (pathname.startsWith("/testimony/") && pathname !== "/testimony/") {
+    await page.evaluate(() => localStorage.setItem("ahc-display-mode-v1", "light"));
+    await page.reload({ waitUntil: "domcontentloaded", timeout: 45000 });
+    await page.waitForFunction(
+      () => document.documentElement.classList.contains("ahc-mode-light"),
+      { timeout: 15000 }
+    );
+    assert(
+      await page.locator("html").evaluate((el) => el.classList.contains("ahc-mode-light")),
+      "requested testimony detail honors Light mode"
+    );
+
+    const expectedImageByPath = {
+      "/testimony/yoga-teacher-to-christian-airi/": "5EEgqTfCJpA",
+      "/testimony/hong-kong-team-2026-08-02/": "l7McqpZIkoE",
+      "/testimony/father-salvation-kato-miyako/": "bsrkif_PY2s"
+    };
+    const expectedImage = expectedImageByPath[pathname];
+    if (expectedImage) {
+      const heroBackground = await page.locator(".testimony-hero").evaluate((el) => getComputedStyle(el, "::before").backgroundImage);
+      assert(heroBackground.includes(expectedImage), `Light testimony hero keeps page-specific image: ${expectedImage}`);
+    }
+
+    const menuButton = page.locator("#ahcSiteMenuButton");
+    if (await menuButton.count()) {
+      await menuButton.click();
+      const languageLink = page.locator(".ahc-site-menu-segment a");
+      const languageHref = await languageLink.getAttribute("href");
+      if (pathname === "/testimony/yoga-teacher-to-christian-airi/" || pathname === "/testimony/hong-kong-team-2026-08-02/") {
+        assert(new URL(languageHref, config.productionUrl).pathname === "/en/testimony/", "Japanese-only testimony language fallback points to English Testimony");
+      }
+    }
+  }
 }
 
 const messageState = await loadMessageState();
