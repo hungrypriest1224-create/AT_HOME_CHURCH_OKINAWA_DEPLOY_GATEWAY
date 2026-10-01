@@ -218,12 +218,9 @@ async function verifyRequestedPath(page, assert) {
 
   const pathname = new URL(page.url()).pathname;
   if (pathname.startsWith("/testimony/") && pathname !== "/testimony/") {
-    await page.evaluate(() => localStorage.setItem("ahc-display-mode-v1", "light"));
-    await page.reload({ waitUntil: "domcontentloaded", timeout: 45000 });
-    await page.waitForFunction(
-      () => document.documentElement.classList.contains("ahc-mode-light"),
-      { timeout: 15000 }
-    );
+    await page.waitForFunction(() => !!window.AHCDisplayMode && typeof window.AHCDisplayMode.set === "function", null, { timeout: 15000 });
+    await page.evaluate(() => window.AHCDisplayMode.set("light"));
+    await page.waitForSelector("html.ahc-mode-light", { state: "attached", timeout: 15000 });
     assert(
       await page.locator("html").evaluate((el) => el.classList.contains("ahc-mode-light")),
       "requested testimony detail honors Light mode"
