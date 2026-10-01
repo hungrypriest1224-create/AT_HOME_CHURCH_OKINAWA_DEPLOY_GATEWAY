@@ -1,8 +1,8 @@
 {
   "schema": 1,
   "deploy": true,
-  "request_id": "ahc-readability-20261001-v1",
-  "reason": "publish-shared-readability-and-bible-dark-surface-2026-10-01",
-  "verify_path": "/bible-today/",
+  "request_id": "ahc-airi-testimony-20261001-v1",
+  "reason": "publish-airi-testimony-2026-10-01",
+  "verify_path": "/testimony/yoga-teacher-to-christian-airi/",
   "firebase_project": "at-home-church-okinawa"
 }
