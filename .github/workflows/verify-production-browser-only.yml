@@ -1,0 +1,75 @@
+name: Verify AHC production browser only
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".verify/production-browser-request.json"
+      - ".github/workflows/verify-production-browser-only.yml"
+  workflow_dispatch:
+    inputs:
+      verify_path:
+        description: "Production path to verify"
+        required: true
+        default: "/"
+
+permissions:
+  contents: read
+
+jobs:
+  browser_verify:
+    name: Production Chromium verification only
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout gateway
+        uses: actions/checkout@v4
+
+      - name: Resolve verification request
+        id: request
+        shell: pwsh
+        run: |
+          if ("${{ github.event_name }}" -eq "workflow_dispatch") {
+            $verifyPath = "${{ inputs.verify_path }}"
+          } else {
+            $request = Get-Content -LiteralPath ".verify/production-browser-request.json" -Raw -Encoding UTF8 | ConvertFrom-Json
+            if ([int]$request.schema -ne 1) { throw "Unsupported browser verification request schema." }
+            $verifyPath = [string]$request.verify_path
+          }
+          if ([string]::IsNullOrWhiteSpace($verifyPath)) { $verifyPath = "/" }
+          if (-not $verifyPath.StartsWith("/") -or $verifyPath.Contains("://") -or $verifyPath.Contains("\")) { throw "Browser verify_path is invalid." }
+          "verify_path=$verifyPath" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Prepare Chromium browser verification
+        shell: pwsh
+        run: |
+          $browserRoot = Join-Path $env:RUNNER_TEMP "ahc-playwright-browsers"
+          $artifactRoot = Join-Path $env:RUNNER_TEMP "ahc-browser-verification"
+          $env:PLAYWRIGHT_BROWSERS_PATH = $browserRoot
+          $env:AHC_BROWSER_ARTIFACT_DIR = $artifactRoot
+          "PLAYWRIGHT_BROWSERS_PATH=$browserRoot" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "AHC_BROWSER_ARTIFACT_DIR=$artifactRoot" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          npm.cmd install --no-save --no-audit --no-fund --prefix gateway playwright@1.55.0
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & (Join-Path $env:GITHUB_WORKSPACE "gateway\node_modules\.bin\playwright.cmd") install chromium
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Verify current production in Chromium
+        shell: pwsh
+        run: |
+          node gateway/verify-production-browser.mjs "${{ steps.request.outputs.verify_path }}"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Upload browser verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ahc-browser-only-verification-${{ github.run_id }}
+          path: ${{ env.AHC_BROWSER_ARTIFACT_DIR }}
+          if-no-files-found: ignore
+          retention-days: 14
