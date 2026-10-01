@@ -417,6 +417,63 @@ try {
     }
   );
 
+  await runScenario(
+    browser,
+    {
+      name: "cross-mode-language-parity",
+      viewport: { width: 1280, height: 900 },
+      mode: "light",
+      readIds: [],
+      locale: "ja-JP"
+    },
+    async ({ page, assert }) => {
+      await gotoHome(page, "light");
+      const testimonyCard = page.locator('[data-light-latest="testimony"]');
+      assert((await testimonyCard.count()) === 1, "Light Home exposes a latest Testimony card");
+      await page.waitForFunction(
+        () => !document.querySelector('[data-light-latest="testimony"]')?.classList.contains("is-loading"),
+        null,
+        { timeout: 15000 }
+      );
+      const testimonyHref = await testimonyCard.getAttribute("href");
+      assert(!!testimonyHref && new URL(testimonyHref, config.productionUrl).pathname.startsWith("/testimony/"), "Light Home latest Testimony card has a testimony destination");
+
+      let response = await page.goto(new URL("/message/morning/2026-10-01-isaiah-42-9/?ahc_browser_verify=parity", config.productionUrl).toString(), {
+        waitUntil: "domcontentloaded",
+        timeout: 45000
+      });
+      assert(!!response && response.ok(), "paired Morning Word Japanese detail returns success");
+      await page.locator("#ahcSiteMenuButton").click();
+      let languageHref = await page.locator(".ahc-site-menu-segment a").getAttribute("href");
+      assert(new URL(languageHref, config.productionUrl).pathname === "/en/message/morning/2026-10-01-isaiah-42-9/", "Morning Word shared menu keeps the exact English counterpart");
+
+      response = await page.goto(new URL("/message/archive/?ahc_browser_verify=parity", config.productionUrl).toString(), {
+        waitUntil: "domcontentloaded",
+        timeout: 45000
+      });
+      assert(!!response && response.ok(), "Japanese MESSAGE archive returns success");
+      await page.locator("#ahcSiteMenuButton").click();
+      languageHref = await page.locator(".ahc-site-menu-segment a").getAttribute("href");
+      assert(new URL(languageHref, config.productionUrl).pathname === "/en/message/archive/", "MESSAGE archive shared menu keeps the English archive counterpart");
+
+      response = await page.goto(new URL("/en/testimony/?ahc_browser_verify=parity", config.productionUrl).toString(), {
+        waitUntil: "domcontentloaded",
+        timeout: 45000
+      });
+      assert(!!response && response.ok(), "English Testimony hub returns success");
+      assert((await page.getByText("From Yoga Teacher to Christian — Airi's Testimony", { exact: true }).count()) > 0, "English Testimony hub includes Airi's testimony");
+
+      response = await page.goto(new URL("/about/?ahc_browser_verify=parity", config.productionUrl).toString(), {
+        waitUntil: "domcontentloaded",
+        timeout: 45000
+      });
+      assert(!!response && response.ok(), "Japanese About returns success in Light mode");
+      await page.locator("#ahcSiteMenuButton").click();
+      const displayText = (await page.locator("[data-ahc-display-action]").innerText()).trim();
+      assert(displayText.includes("オリジナル") && !displayText.includes("地球儀"), "child Light display action is labeled オリジナル rather than 地球儀");
+    }
+  );
+
   console.log("AHC_BROWSER_VERIFICATION_PASSED");
 } catch (error) {
   globalErrors.push(error.message);
