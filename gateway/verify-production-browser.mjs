@@ -435,13 +435,13 @@ try {
         "English Jerusalem 3/3 portal is not inside an aria-hidden subtree"
       );
 
-      await verifyRequestedPath(page, assert);
-
       await Promise.all([
         page.waitForURL((url) => url.origin === productionOrigin && url.pathname === "/en/bible-today/", { timeout: 30000 }),
         englishJerusalemPortal.evaluate((node) => node.click())
       ]);
       assert(new URL(page.url()).pathname === "/en/bible-today/", "English Jerusalem 3/3 portal navigates to English BIBLE TODAY");
+
+      await verifyRequestedPath(page, assert);
     }
   );
 
