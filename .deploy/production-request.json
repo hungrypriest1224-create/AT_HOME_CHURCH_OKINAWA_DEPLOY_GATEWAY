@@ -1,8 +1,8 @@
 {
   "schema": 1,
   "deploy": true,
-  "request_id": "ahc-jerusalem-parity-a11y-20261001-v1",
-  "reason": "fix-jerusalem-language-parity-and-accessibility-2026-10-01",
+  "request_id": "ahc-home-globe-runtime-20261002-v1",
+  "reason": "publish-shared-home-globe-runtime-and-regression-guards-2026-10-02",
   "verify_path": "/en/",
   "firebase_project": "at-home-church-okinawa"
 }
