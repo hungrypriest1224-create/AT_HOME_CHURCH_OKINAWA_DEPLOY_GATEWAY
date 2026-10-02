@@ -66,6 +66,7 @@ jobs:
           const fs = require("fs");
           const deployText = fs.readFileSync(".github/workflows/deploy-production.yml", "utf8");
           const verifyText = fs.readFileSync(".github/workflows/verify-gateway.yml", "utf8");
+          const runtimeVerifyText = fs.readFileSync("gateway/verify-production.mjs", "utf8");
 
           if (!/^\s{2}workflow_dispatch:/m.test(deployText)) {
             throw new Error("Production workflow must retain workflow_dispatch fallback");
@@ -95,6 +96,11 @@ jobs:
           }
           if (!deployText.includes("node gateway/verify-production-browser.mjs")) {
             throw new Error("Production Chromium browser gate is missing");
+          }
+          for (const requiredCrawlerCheck of ["OAI-SearchBot", "ChatGPT-User", "/robots.txt", "/sitemap.xml", "AHC_CRAWLER_ACCESS_VERIFICATION_PASSED"]) {
+            if (!runtimeVerifyText.includes(requiredCrawlerCheck)) {
+              throw new Error(`Production crawler-access verification is missing: ${requiredCrawlerCheck}`);
+            }
           }
           if (!deployText.includes("actions/upload-artifact@v4")) {
             throw new Error("Browser verification evidence upload is missing");
