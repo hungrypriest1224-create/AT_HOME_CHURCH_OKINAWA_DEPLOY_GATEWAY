@@ -1,8 +1,8 @@
 {
   "schema": 1,
   "deploy": true,
-  "request_id": "ahc-morning-word-20261003-matthew-3-8-v1",
-  "reason": "publish-morning-word-2026-10-03-matthew-3-8",
-  "verify_path": "/message/morning/2026-10-03-matthew-3-8/",
+  "request_id": "ahc-testimony-nori-20261003-v1",
+  "reason": "publish-testimony-nori-trust-in-the-darkness",
+  "verify_path": "/testimony/nori-trust-in-the-darkness/",
   "firebase_project": "at-home-church-okinawa"
 }
