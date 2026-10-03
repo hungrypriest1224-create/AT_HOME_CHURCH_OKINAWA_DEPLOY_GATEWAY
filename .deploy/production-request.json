@@ -1,8 +1,8 @@
 {
   "schema": 1,
   "deploy": true,
-  "request_id": "ahc-testimony-nori-20261003-v1",
-  "reason": "publish-testimony-nori-trust-in-the-darkness",
-  "verify_path": "/testimony/nori-trust-in-the-darkness/",
+  "request_id": "ahc-testimony-speaker-first-20261003-v1",
+  "reason": "publish-testimony-speaker-first-cleanup",
+  "verify_path": "/testimony/father-salvation-kato-miyako/",
   "firebase_project": "at-home-church-okinawa"
 }
