@@ -1,8 +1,8 @@
 {
   "schema": 1,
   "deploy": true,
-  "request_id": "ahc-testimony-speaker-voice-20261003-v2",
-  "reason": "publish-testimony-remove-third-person-narration",
+  "request_id": "ahc-testimony-nori-source-strict-20261003-v3",
+  "reason": "remove-unverified-nori-event-reference",
   "verify_path": "/testimony/nori-trust-in-the-darkness/",
   "firebase_project": "at-home-church-okinawa"
 }
